@@ -21,8 +21,8 @@ from model.resnet import *
 DATA_PATH = './data'
 LOG_PATH = './log'
 IMG_SIZE = 32
-CLASS = 3
-EPOCH = 100
+CLASS = 9
+EPOCH = 500
 BATCH_SIZE = 16
 ITERATION = 20
 MODEL = 'LeNet'
@@ -34,7 +34,7 @@ if MODEL == 'LeNet':
     model = LeNet(in_shape=(IMG_SIZE,IMG_SIZE,1), n_class=CLASS)
 elif MODEL == 'ResNet':
     # Resnet
-    EPOCH = 60
+    EPOCH = 200
     model = ResnetBuilder.build_resnet_18((1, IMG_SIZE, IMG_SIZE), CLASS)
     model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
@@ -43,9 +43,9 @@ print(model.summary())
 
 # set callback
 def scheduler(epoch):
-    if epoch < 50:
-        return 0.01
     if epoch < 100:
+        return 0.01
+    if epoch < 200:
         return 0.005
     return 0.001
 tb_cb = TensorBoard(log_dir=LOG_PATH)
