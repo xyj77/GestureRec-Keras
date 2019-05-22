@@ -18,6 +18,4 @@ def LeNet(in_shape, n_class):
     model.add(Dense(64, activation = 'relu', kernel_initializer='he_normal', kernel_regularizer=regularizers.l2(0.01)))
     model.add(Dropout(rate=0.4))
     model.add(Dense(n_class, activation = 'softmax', kernel_initializer='he_normal'))
-    sgd = optimizers.SGD(lr=.01, momentum=0.9, nesterov=True)
-    model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
     return model

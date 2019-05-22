@@ -11,46 +11,64 @@ import matplotlib.pyplot as plt
 import keras
 from keras import optimizers
 from keras.utils import plot_model
-from keras.callbacks import LearningRateScheduler, TensorBoard
+from keras.callbacks import TensorBoard
 from keras.preprocessing.image import ImageDataGenerator
 
 from model.LeNet import *
 from model.resnet import *
+from model.Vgg import *
+from model.DenseNet import *
+
+from keras import backend as K
+if('tensorflow' == K.backend()):
+    import tensorflow as tf
+    from keras.backend.tensorflow_backend import set_session
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    sess = tf.Session(config=config)
 
 # Hyper-parameter
 DATA_PATH = './data'
 LOG_PATH = './log'
 IMG_SIZE = 32
 CLASS = 9
-EPOCH = 500
-BATCH_SIZE = 16
+BATCH_SIZE = 32
 ITERATION = 20
-MODEL = 'LeNet'
+
+# MODEL = 'LeNet'
+# MODEL = 'VGG'
+MODEL = 'ResNet'
+# MODEL = 'DenseNet'
+# MODEL = 'SENet'
 
 
 # build network
 if MODEL == 'LeNet':
-    # LeNet
+    EPOCH = 500
     model = LeNet(in_shape=(IMG_SIZE,IMG_SIZE,1), n_class=CLASS)
-elif MODEL == 'ResNet':
-    # Resnet
+elif MODEL == 'VGG':
     EPOCH = 200
+    model = Vgg19(in_shape=(IMG_SIZE,IMG_SIZE,1), n_class=CLASS)
+elif MODEL == 'ResNet':
+    EPOCH = 400
     model = ResnetBuilder.build_resnet_18((1, IMG_SIZE, IMG_SIZE), CLASS)
-    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+elif MODEL == 'DenseNet':
+    EPOCH = 200
+    model = DenseNet(in_shape=(IMG_SIZE,IMG_SIZE,1), n_class=CLASS)
+elif MODEL == 'SENet':
+    EPOCH = 200
+    model = DenseNet(in_shape=(IMG_SIZE,IMG_SIZE,1), n_class=CLASS)
 
+adam = optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, amsgrad=False)
+model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
+
+# show model
 plot_model(model, to_file='./images/'+ MODEL +'_model.png')
 print(model.summary())
 
 # set callback
-def scheduler(epoch):
-    if epoch < 100:
-        return 0.01
-    if epoch < 200:
-        return 0.005
-    return 0.001
 tb_cb = TensorBoard(log_dir=LOG_PATH)
-change_lr = LearningRateScheduler(scheduler)
-cbks = [change_lr, tb_cb]
+cbks = [tb_cb]
 
 # using real-time data augmentation
 print('Using real-time data augmentation.')
@@ -78,10 +96,12 @@ validation = datagen.flow_from_directory(
         subset='validation')
 
 # start train 
+print('Using ' + MODEL + 'to predict gestures!')
 history = model.fit_generator(
         generator=train,
         steps_per_epoch=ITERATION,
         epochs=EPOCH,
+        callbacks=cbks,
         validation_data=validation,
         validation_steps=ITERATION)
 
@@ -108,4 +128,3 @@ plt.xlabel('Epoch')
 plt.legend(['Train', 'Test'], loc='best')
 plt.savefig('./images/'+ MODEL +'_loss.png')
 plt.close()
-
